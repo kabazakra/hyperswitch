@@ -103,6 +103,7 @@ pub struct ConnectorAuthentication {
     pub shift4: Option<HeaderKey>,
     pub silverflow: Option<BodyKey>,
     pub square: Option<BodyKey>,
+    pub squearesandbox: Option<HeaderKey>,
     pub stax: Option<HeaderKey>,
     pub stripe: Option<HeaderKey>,
     pub stripebilling: Option<HeaderKey>,

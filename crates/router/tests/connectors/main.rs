@@ -96,6 +96,7 @@ mod santander;
 mod shift4;
 mod silverflow;
 mod square;
+mod squearesandbox;
 mod stax;
 mod stripe;
 mod stripebilling;

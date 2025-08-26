@@ -18,6 +18,11 @@ use router::{
 use test_utils::connector_auth::ConnectorAuthType;
 use tokio::sync::oneshot;
 use wiremock::{Mock, MockServer};
+use once_cell::sync::Lazy;
+
+static PROXY_CONFIG: Lazy<hyperswitch_interfaces::types::Proxy> = Lazy::new(|| {
+    hyperswitch_interfaces::types::Proxy::default()
+});
 
 pub trait Connector {
     fn get_data(&self) -> types::api::ConnectorData;
@@ -600,11 +605,13 @@ pub trait ConnectorActions: Connector {
         let request = self.get_payout_request(None, payout_type, payment_info);
         let tx: oneshot::Sender<()> = oneshot::channel().0;
 
+
+
         let app_state = Box::pin(routes::AppState::with_storage(
             Settings::new().unwrap(),
             StorageImpl::PostgresqlTest,
             tx,
-            Box::new(services::MockApiClient),
+            Box::new(services::ProxyClient::new(&PROXY_CONFIG).unwrap())
         ))
         .await;
         let state = Arc::new(app_state)
@@ -649,7 +656,7 @@ pub trait ConnectorActions: Connector {
             Settings::new().unwrap(),
             StorageImpl::PostgresqlTest,
             tx,
-            Box::new(services::MockApiClient),
+            Box::new(services::ProxyClient::new(&PROXY_CONFIG).unwrap()),
         ))
         .await;
         let state = Arc::new(app_state)
@@ -695,7 +702,7 @@ pub trait ConnectorActions: Connector {
             Settings::new().unwrap(),
             StorageImpl::PostgresqlTest,
             tx,
-            Box::new(services::MockApiClient),
+            Box::new(services::ProxyClient::new(&PROXY_CONFIG).unwrap()),
         ))
         .await;
         let state = Arc::new(app_state)
@@ -740,7 +747,7 @@ pub trait ConnectorActions: Connector {
             Settings::new().unwrap(),
             StorageImpl::PostgresqlTest,
             tx,
-            Box::new(services::MockApiClient),
+            Box::new(services::ProxyClient::new(&PROXY_CONFIG).unwrap()),
         ))
         .await;
         let state = Arc::new(app_state)
@@ -836,7 +843,7 @@ pub trait ConnectorActions: Connector {
             Settings::new().unwrap(),
             StorageImpl::PostgresqlTest,
             tx,
-            Box::new(services::MockApiClient),
+            Box::new(services::ProxyClient::new(&PROXY_CONFIG).unwrap()),
         ))
         .await;
         let state = Arc::new(app_state)
@@ -878,7 +885,7 @@ async fn call_connector<
         conf,
         StorageImpl::PostgresqlTest,
         tx,
-        Box::new(services::MockApiClient),
+        Box::new(services::ProxyClient::new(&PROXY_CONFIG).unwrap()),
     ))
     .await;
     let state = Arc::new(app_state)

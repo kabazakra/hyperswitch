@@ -1,0 +1,31 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build-square-test",
+            "type": "shell",
+            "command": "cargo",
+            "args": [
+                "test",
+                "--package=router",
+                "--test=connectors",
+                "--no-run"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "detail": "Build Square connector test for debugging"
+        }
+    ]
+}
+
+

@@ -58,10 +58,13 @@ impl TryFrom<(&types::TokenizationRouterData, Card)> for SquareTokenRequest {
         );
         //The below error will never happen because if session-id is not generated it would give error in execute_pretasks itself.
         let session_id = Secret::new(
-            item.session_token
+         Some(String::from("saasdasd443242"))
                 .clone()
-                .ok_or(errors::ConnectorError::RequestEncodingFailed)?,
+                .ok_or(errors::ConnectorError::FailedToObtainAuthType)?,
         );
+
+        let a = 1;
+
         Ok(Self::Card(SquareTokenizeData {
             client_id: auth.key1,
             session_id,

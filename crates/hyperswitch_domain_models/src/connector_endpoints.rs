@@ -109,6 +109,7 @@ pub struct Connectors {
     pub silverflow: ConnectorParams,
     pub signifyd: ConnectorParams,
     pub square: ConnectorParams,
+    pub squearesandbox: ConnectorParams,
     pub stax: ConnectorParams,
     pub stripe: ConnectorParamsWithFileUploadUrl,
     pub stripebilling: ConnectorParams,
