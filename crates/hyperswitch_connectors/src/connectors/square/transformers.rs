@@ -60,10 +60,9 @@ impl TryFrom<(&types::TokenizationRouterData, Card)> for SquareTokenRequest {
         let session_id = Secret::new(
          Some(String::from("saasdasd443242"))
                 .clone()
-                .ok_or(errors::ConnectorError::FailedToObtainAuthType)?,
+                .ok_or(errors::ConnectorError::RequestEncodingFailed)?,
         );
 
-        let a = 1;
 
         Ok(Self::Card(SquareTokenizeData {
             client_id: auth.key1,

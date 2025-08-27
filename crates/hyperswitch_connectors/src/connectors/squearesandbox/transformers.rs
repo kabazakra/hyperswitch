@@ -2,17 +2,21 @@ use common_enums::enums;
 use common_utils::types::StringMinorUnit;
 use hyperswitch_domain_models::{
     payment_method_data::PaymentMethodData,
-    router_data::{ConnectorAuthType, RouterData},
+    router_data::{ConnectorAuthType, PaymentMethodToken, RouterData},
     router_flow_types::refunds::{Execute, RSync},
     router_request_types::ResponseId,
     router_response_types::{PaymentsResponseData, RefundsResponseData},
-    types::{PaymentsAuthorizeRouterData, RefundsRouterData},
+    types::{PaymentsAuthorizeRouterData, RefundsRouterData, TokenizationRouterData},
 };
 use hyperswitch_interfaces::errors;
-use masking::Secret;
+use masking::{Secret, PeekInterface};
 use serde::{Deserialize, Serialize};
 
-use crate::types::{RefundsResponseRouterData, ResponseRouterData};
+
+use crate::{
+    types::{RefundsResponseRouterData, ResponseRouterData},
+    utils::RouterData as _,
+};
 
 //TODO: Fill the struct with respective fields
 pub struct SquearesandboxRouterData<T> {
@@ -33,8 +37,24 @@ impl<T> From<(StringMinorUnit, T)> for SquearesandboxRouterData<T> {
 //TODO: Fill the struct with respective fields
 #[derive(Default, Debug, Serialize, PartialEq)]
 pub struct SquearesandboxPaymentsRequest {
-    amount: StringMinorUnit,
-    card: SquearesandboxCard,
+    amount_money: SquearesandboxPaymentsAmountData,
+    idempotency_key: Secret<String>,
+    source_id: Secret<String>,
+    autocomplete: bool,
+    external_details: SquearesandboxPaymentsRequestExternalDetails,
+}
+
+#[derive(Debug, Default, PartialEq, Deserialize, Serialize)]
+pub struct SquearesandboxPaymentsAmountData {
+    amount: i64,
+    currency: enums::Currency,
+}
+
+#[derive(Debug, Default, PartialEq, Deserialize, Serialize)]
+pub struct SquearesandboxPaymentsRequestExternalDetails {
+    source: String,
+    #[serde(rename = "type")]
+    source_type: String,
 }
 
 #[derive(Default, Debug, Serialize, Eq, PartialEq)]
@@ -50,16 +70,31 @@ impl TryFrom<&SquearesandboxRouterData<&PaymentsAuthorizeRouterData>>
     for SquearesandboxPaymentsRequest
 {
     type Error = error_stack::Report<errors::ConnectorError>;
+
     fn try_from(
         item: &SquearesandboxRouterData<&PaymentsAuthorizeRouterData>,
     ) -> Result<Self, Self::Error> {
-        match item.router_data.request.payment_method_data.clone() {
-            PaymentMethodData::Card(_) => Err(errors::ConnectorError::NotImplemented(
-                "Card payment method not implemented".to_string(),
-            )
-            .into()),
-            _ => Err(errors::ConnectorError::NotImplemented("Payment method".to_string()).into()),
-        }
+
+        let source = match item.router_data.get_payment_method_token()? {
+            PaymentMethodToken::Token(pm_token) => Ok(pm_token),
+            _ => Err(errors::ConnectorError::MissingRequiredField {
+                field_name: "payment_method_token",
+            }),
+        }?;
+
+        Ok(Self {
+            amount_money: SquearesandboxPaymentsAmountData {
+                amount: item.amount.to_string().parse().unwrap_or(0),
+                currency: item.router_data.request.currency,
+            },
+            idempotency_key: Secret::new("key".to_string()),
+            source_id: source, // Use the source variable you extracted
+            autocomplete: true,
+            external_details: SquearesandboxPaymentsRequestExternalDetails {
+                source: "card".to_string(),
+                source_type: "card".to_string(),
+            },
+        })
     }
 }
 
@@ -220,4 +255,39 @@ pub struct SquearesandboxErrorResponse {
     pub network_advice_code: Option<String>,
     pub network_decline_code: Option<String>,
     pub network_error_message: Option<String>,
+}
+
+#[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct SquearesandboxTokenRequest {
+    pub card_nonce: String,
+}
+
+impl TryFrom<&TokenizationRouterData> for SquearesandboxTokenRequest {
+    type Error = error_stack::Report<errors::ConnectorError>;
+
+    fn try_from(item: &TokenizationRouterData) -> Result<Self, Self::Error> {
+        let card_data = match &item.request.payment_method_data {
+            PaymentMethodData::Card(card) => card,
+            _ => return Err(errors::ConnectorError::NotImplemented("Only card payments supported".to_string()).into()),
+        };
+
+        Ok(Self {
+            card_nonce: card_data.card_number.peek().to_string(),
+        })
+    }
+}
+
+#[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct SquearesandboxTokenResponse {
+    pub card_nonce: String,
+}
+
+impl TryFrom<&SquearesandboxTokenResponse> for PaymentsResponseData {
+    type Error = error_stack::Report<errors::ConnectorError>;
+
+    fn try_from(item: &SquearesandboxTokenResponse) -> Result<Self, Self::Error> {
+        Ok(PaymentsResponseData::TokenizationResponse {
+            token: item.card_nonce.clone(),
+        })
+    }
 }

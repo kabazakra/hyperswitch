@@ -4,10 +4,10 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug Square Connector Test",
+            "name": "Debug Squaresandbox Connector Test",
             "program": "${workspaceFolder}/target/debug/deps/connectors-23f3e5ad60c77170",
             "args": [
-                "square::should_only_authorize_payment",
+                "squearesandbox::should_only_authorize_payment",
                 "--nocapture",
                 "--test-threads=1"
             ],
@@ -15,7 +15,7 @@
             "env": {
                 "CONNECTOR_AUTH_FILE_PATH": "${workspaceFolder}/crates/router/tests/connectors/auth.toml",
                 "RUST_TEST_THREADS": "1",
-                "RUST_BACKTRACE": "1",
+                "RUST_BACKTRACE": "short",
                 "HTTPS_PROXY":"http://127.0.0.1:8888"
             },
             "console": "integratedTerminal",
@@ -25,27 +25,7 @@
             "initCommands": [
                 "settings set target.inline-breakpoint-strategy always"
             ]
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug All Square Tests",
-            "program": "${workspaceFolder}/target/debug/deps/connectors-23f3e5ad60c77170",
-            "args": [
-                "square",
-                "--nocapture",
-                "--test-threads=1"
-            ],
-            "cwd": "${workspaceFolder}",
-            "env": {
-                "CONNECTOR_AUTH_FILE_PATH": "${workspaceFolder}/crates/router/tests/connectors/auth.toml",
-                "RUST_TEST_THREADS": "1",
-                "RUST_BACKTRACE": "1"
-            },
-            "console": "integratedTerminal",
-            "stopOnEntry": false,
-            "preLaunchTask": "build-square-test",
-            "sourceLanguages": ["rust"]
         }
+        
     ]
 }
