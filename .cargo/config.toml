@@ -1,0 +1,31 @@
+# .cargo/config.toml
+[build]
+# Let sccache wrap rustc so object files are reused across builds/branches
+rustc-wrapper = "sccache"
+
+# Use a shared target dir so different worktrees/branches reuse artifacts
+# (Change the path for macOS/Linux host; keep it absolute for best results)
+target-dir = "/home/$USER/.cache/cargo/target-shared"
+
+[registries.crates-io]
+# Faster crate index (default on modern Rust, but set explicitly)
+protocol = "sparse"
+
+[env]
+CARGO_TERM_COLOR = "always"
+SCCACHE_CACHE_SIZE = "15G"
+SCCACHE_DIR = { value = "/home/ihorkorniichuk/.cache/sccache", force = true }
+
+# macOS: speed up linking by avoiding dSYM bundling during dev
+RUSTFLAGS = { value = "-C split-debuginfo=unpacked", force = true }
+
+[profile.dev]
+# Keep incremental on for quick rebuilds; reduce debug info size
+incremental = true
+debug = 1
+
+[profile.release]
+# Faster link with decent codegen for release/deploy
+lto = "thin"
+codegen-units = 16
+strip = "symbols"

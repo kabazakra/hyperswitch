@@ -1,7 +1,7 @@
 use common_enums::enums;
 use common_utils::types::StringMinorUnit;
 use hyperswitch_domain_models::{
-    payment_method_data::PaymentMethodData,
+    payment_method_data::{BankDebitData, Card, PayLaterData, PaymentMethodData, WalletData},
     router_data::{ConnectorAuthType, PaymentMethodToken, RouterData},
     router_flow_types::refunds::{Execute, RSync},
     router_request_types::ResponseId,
@@ -256,10 +256,25 @@ pub struct SquearesandboxErrorResponse {
     pub network_decline_code: Option<String>,
     pub network_error_message: Option<String>,
 }
+#[derive(Debug, Serialize)]
+pub struct SquearesandboxTokenizeData {
+    client_id: Secret<String>,
+    session_id: Secret<String>,
+    card_data: SquearesandboxCardData,
+}
 
-#[derive(Default, Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct SquearesandboxTokenRequest {
-    pub card_nonce: String,
+#[derive(Debug, Serialize)]
+pub struct SquearesandboxCardData {
+    cvv: Secret<String>,
+    exp_month: Secret<u16>,
+    exp_year: Secret<u16>,
+    number: cards::CardNumber,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(untagged)]
+pub enum SquearesandboxTokenRequest {
+    Card(SquearesandboxTokenizeData)
 }
 
 impl TryFrom<&TokenizationRouterData> for SquearesandboxTokenRequest {
@@ -271,9 +286,16 @@ impl TryFrom<&TokenizationRouterData> for SquearesandboxTokenRequest {
             _ => return Err(errors::ConnectorError::NotImplemented("Only card payments supported".to_string()).into()),
         };
 
-        Ok(Self {
-            card_nonce: card_data.card_number.peek().to_string(),
-        })
+        Ok(Self::Card(SquearesandboxTokenizeData {
+            client_id: Secret::new("dummy_client_id".to_string()),
+            session_id: Secret::new("dummy_session_id".to_string()),
+            card_data: SquearesandboxCardData {
+                cvv: card_data.card_cvc.clone(),
+                exp_month: Secret::new(card_data.card_exp_month.peek().parse().unwrap_or(12)),
+                exp_year: Secret::new(card_data.card_exp_year.peek().parse().unwrap_or(2025)),
+                number: card_data.card_number.clone(),
+            },
+        }))
     }
 }
 

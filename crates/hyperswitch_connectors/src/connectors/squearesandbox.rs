@@ -201,7 +201,7 @@ impl ConnectorCommon for Squearesandbox {
             .change_context(errors::ConnectorError::FailedToObtainAuthType)?;
         Ok(vec![(
             headers::AUTHORIZATION.to_string(),
-            auth.api_key.expose().into_masked(),
+            ("Bearer ".to_string().clone() + &auth.api_key.expose()).into_masked(),
         )])
     }
 
